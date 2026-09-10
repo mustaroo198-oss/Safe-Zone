@@ -3,177 +3,789 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إنشاء الغرف وموافقة الإدمن</title>
-    <!-- تضمين مكتبة فايربيس (الإصدار القديم المتوافق مع Realtime Database) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <title> Safe Zone </title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; text-align: center; }
-        .container { background: #fff; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 10px 0; font-size: 16px; width: 80%; border-radius: 5px; border: 1px solid #ccc; }
-        button { background: #28a745; color: white; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-        .room-card { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 5px; text-align: right; display: flex; justify-content: space-between; align-items: center; }
-        .admin-section { margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px; }
-        .approve-btn { background: #007bff; width: auto; padding: 5px 15px; margin: 0; }
-        .approve-btn:hover { background: #0056b3; }
-        .status-pending { color: orange; font-weight: bold; }
-        .status-approved { color: green; font-weight: bold; }
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --accent: #d4af37;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --card-border: rgba(212, 175, 55, 0.2);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: background 0.6s ease;
+        }
+        .container {
+            max-width: 520px;
+            width: 100%;
+            margin: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .container.chat-fullscreen { max-width: 900px; height: 90vh; }
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid var(--card-border);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .lamp-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .lamp-head {
+            width: 80px; height: 40px;
+            background: var(--accent);
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            transition: 0.4s;
+        }
+        .lamp-cord { width: 2px; height: 50px; background: var(--text-muted); }
+        .lamp-bulb {
+            width: 12px; height: 12px; background: #fff;
+            border-radius: 50%; box-shadow: 0 0 10px #fff;
+            margin-top: -2px;
+        }
+        h1, h2 { margin-bottom: 15px; color: var(--accent); font-size: 24px; }
+        p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #d4af37 0%, #aa8c2c 100%);
+            color: #121417;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.3s;
+            margin-top: 5px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+        button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4); }
+        .secondary-btn { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 10px; box-shadow: none; }
+        .secondary-btn:hover { background: rgba(212, 175, 55, 0.1); }
+        
+        .profile-icon-wrapper {
+            position: absolute; top: 15px; left: 20px; z-index: 100; cursor: pointer;
+        }
+        .profile-btn {
+            background: rgba(30, 41, 59, 0.8); border: 1px solid var(--accent); color: var(--accent);
+            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s;
+        }
+        .profile-btn:hover { background: var(--accent); color: #0f172a; }
+        .profile-dropdown {
+            position: absolute; top: 55px; left: 0; width: 260px;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border); border-radius: 15px; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: right; display: none; z-index: 101;
+        }
+        .profile-dropdown.active { display: block; }
+        .profile-dropdown h4 { color: var(--accent); font-size: 15px; margin-bottom: 5px; }
+        .profile-dropdown p { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
+
+        footer {
+            text-align: center; padding: 15px; font-size: 13px; color: var(--accent);
+            letter-spacing: 1px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.05); width: 100%;
+        }
+        .hidden { display: none !important; }
+        
+        .rooms-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; max-height: 280px; overflow-y: auto; padding: 5px; }
+        .room-box {
+            background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px; padding: 18px 10px; text-align: center; cursor: pointer; transition: 0.3s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+        }
+        .room-box:hover {
+            transform: translateY(-4px); background: rgba(30, 41, 59, 0.8);
+            border-color: var(--accent); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
+        }
+        .room-box span { font-size: 26px; }
+        .room-box h4 { color: var(--text-main); font-size: 13px; font-weight: 600; word-break: break-word; }
+        .room-box.full-width { grid-column: span 2; background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(30, 41, 59, 0.5)); border-color: rgba(139, 92, 246, 0.3); }
+
+        .admin-table { width: 100%; font-size: 13px; text-align: right; margin-top: 15px; border-collapse: collapse; }
+        .admin-table th, .admin-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .badge-pending { color: #facc15; }
+        
+        .chat-container-wide {
+            width: 100%; height: 75vh; background: rgba(15, 23, 42, 0.85); border-radius: 16px;
+            border: 1px solid var(--card-border); display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px;
+        }
+        .chat-header-bar {
+            background: rgba(30, 41, 59, 0.9); padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .chat-messages-area {
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 12px; text-align: right; background: radial-gradient(circle at center, #111827 0%, #0b0f19 100%);
+        }
+        .chat-msg-bubble {
+            background: rgba(30, 41, 59, 0.95); padding: 10px 16px; border-radius: 12px; font-size: 14px;
+            max-width: 65%; word-break: break-word; border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        }
+        .delete-msg-btn {
+            background: transparent; color: var(--danger); border: none; cursor: pointer;
+            font-size: 14px; padding: 2px 6px; border-radius: 4px; box-shadow: none; width: auto; margin-top: 0;
+        }
+        .chat-input-bar {
+            padding: 15px; background: rgba(30, 41, 59, 0.9); display: flex; gap: 10px; align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .chat-input-bar input { margin-bottom: 0; flex: 1; }
+        .chat-input-bar button { width: auto; padding: 12px 25px; margin-top: 0; }
+
+        .voice-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
+        .pulse-circle {
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(212,175,55,0.35) 0%, rgba(15,23,42,0.9) 70%);
+            border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 25px rgba(212,175,55,0.25); animation: pulse-anim 2s infinite; margin-bottom: 10px;
+            font-weight: bold; color: var(--accent); font-size: 13px;
+        }
+        @keyframes pulse-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+        .voice-users-box {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 12px; width: 100%; max-height: 150px; overflow-y: auto; text-align: right; margin-bottom: 12px;
+        }
+        #qr-scanner-video { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid var(--accent); margin-bottom: 10px; }
+        #new-room-qrcode { background: #fff; padding: 10px; border-radius: 10px; display: inline-block; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>إنشاء غرفتي الخاصة</h2>
-    <div id="user-section">
-        <input type="text" id="roomNameInput" placeholder="أدخل اسم الغرفة...">
-        <br>
-        <button id="createRoomBtn">إنشاء الغرفة</button>
-        <p id="userMessage"></p>
+    <div class="container" id="main-container">
+        <div id="profile-wrapper" class="profile-icon-wrapper hidden">
+            <div class="profile-btn" onclick="toggleProfileMenu()">👤</div>
+            <div id="profile-dropdown" class="profile-dropdown">
+                <h4 id="drop-nick">الاسم المستعار</h4>
+                <p id="drop-real">الاسم الحقيقي: -</p>
+                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
+                <button style="font-size: 13px; padding: 8px; margin-bottom: 8px;" onclick="showScreen('change-pass-screen')">تغيير كلمة المرور</button>
+                <button style="font-size: 13px; padding: 8px; background: var(--danger); color: #fff; box-shadow: none;" onclick="logoutUser()">تسجيل خروج</button>
+            </div>
+        </div>
+
+        <div id="intro-screen" class="card">
+            <div class="lamp-container" onclick="toggleLight()">
+                <div class="lamp-head" id="lampHead"></div>
+                <div class="lamp-cord"></div>
+                <div class="lamp-bulb" id="lampBulb"></div>
+            </div>
+            <h1>منطقة آمنة</h1>
+            <p>مساحة سرية ومشفرة للتحدث بحرية مطلقة</p>
+            <button onclick="showScreen('register-screen')">بدء الجلسة</button>
+        </div>
+
+        <div id="register-screen" class="card hidden">
+            <h2>تسجيل هوية جديدة</h2>
+            <input type="text" id="reg-real-name" placeholder="الاسم الحقيقي (للأدمن فقط)">
+            <input type="text" id="reg-nick-name" placeholder="الاسم المستعار (الظاهر للجميع)">
+            <input type="text" id="reg-phone" placeholder="رقم الهاتف">
+            <input type="password" id="reg-pass" placeholder="كلمة المرور">
+            <button onclick="registerUser()">إرسال طلب الانضمام</button>
+            <button class="secondary-btn" onclick="showScreen('login-screen')">لديك حساب؟ سجل دخول</button>
+        </div>
+
+        <div id="login-screen" class="card hidden">
+            <h2>دخول البوابة</h2>
+            <input type="text" id="log-phone" placeholder="رقم الهاتف">
+            <input type="password" id="log-pass" placeholder="كلمة المرور">
+            <button onclick="loginUser()">دخول</button>
+            <button class="secondary-btn" onclick="showScreen('register-screen')">إنشاء حساب جديد</button>
+        </div>
+
+        <div id="pending-screen" class="card hidden">
+            <h2>طلبك قيد المراجعة</h2>
+            <p>بياناتك مسجلة الآن في قائمة الانتظار. بانتظار موافقة الأدمن.</p>
+            <button class="secondary-btn" onclick="showScreen('login-screen')">إعادة المحاولة</button>
+        </div>
+
+        <div id="change-pass-screen" class="card hidden">
+            <h2>طلب تغيير كلمة المرور</h2>
+            <input type="password" id="old-pass-input" placeholder="كلمة المرور القديمة">
+            <input type="password" id="new-pass-input" placeholder="كلمة المرور الجديدة المقترحة">
+            <button onclick="requestPasswordChange()">إرسال طلب التغيير للأدمن</button>
+            <button class="secondary-btn" onclick="showScreen('rooms-screen')">رجوع</button>
+        </div>
+
+        <!-- شاشة الغرف مع إمكانية إنشاء غرفة جديدة -->
+        <div id="rooms-screen" class="card hidden">
+            <h2>الغرف الآمنة المتاحة</h2>
+            <div class="rooms-grid" id="dynamic-rooms-grid">
+                <!-- الغرف الافتراضية والمخصصة تضاف هنا ديناميكياً -->
+            </div>
+            <button style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #fff; margin-top: 10px;" onclick="showScreen('create-room-screen')">➕ إنشاء غرفة جديدة</button>
+            <div id="admin-access-btn" class="hidden" style="margin-top: 8px;">
+                <button style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff;" onclick="showScreen('admin-screen'); loadAdminData();">لوحة تحكم الأدمن</button>
+            </div>
+        </div>
+
+        <!-- شاشة إنشاء غرفة -->
+        <div id="create-room-screen" class="card hidden">
+            <h2>إنشاء غرفة جديدة</h2>
+            <input type="text" id="new-room-name-input" placeholder="اسم الغرفة">
+            <input type="password" id="new-room-pass-input" placeholder="باسورد الغرفة (سر الدخول)">
+            <button onclick="createNewRoom()">إنشاء الغرفة وتوليد QR</button>
+            <button class="secondary-btn" onclick="showScreen('rooms-screen')">إلغاء</button>
+        </div>
+
+        <!-- شاشة عرض QR الخاص بالغرقة الجديدة المنشأة -->
+        <div id="room-qr-display-screen" class="card hidden">
+            <h2>تم إنشاء الغرفة بنجاح!</h2>
+            <p>احتفظ بـ QR Code الخاص بغرفتك لمشاركته:</p>
+            <div id="new-room-qrcode"></div>
+            <p id="created-room-info" style="color: var(--accent); font-weight: bold; margin-top: 10px;"></p>
+            <button onclick="showScreen('rooms-screen')">العودة لقائمة الغرف</button>
+        </div>
+
+        <div id="room-auth-screen" class="card hidden">
+            <h2 id="selected-room-title">الغرفة</h2>
+            <p>أدخل كلمة مرور الغرفة أو استخدم ماسح الـ QR:</p>
+            <input type="password" id="room-pass-input" placeholder="باسورد الغرفة">
+            <button onclick="verifyRoomPass()">دخول الغرفة</button>
+            <button class="secondary-btn" onclick="startQRCameraScan()">📷 مسح بالكاميرا المباشرة</button>
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="scanQRFromFile(event)">
+            <button class="secondary-btn" onclick="document.getElementById('qr-file-input').click()">📁 اختيار صورة QR من المعرض</button>
+            <div id="scanner-container" class="hidden" style="margin-top: 15px;">
+                <video id="qr-scanner-video" playsinline></video>
+                <button class="secondary-btn" style="background: var(--danger); color: #fff; border: none;" onclick="stopQRCameraScan()">إيقاف الكاميرا</button>
+            </div>
+            <button class="secondary-btn" onclick="stopQRCameraScan(); showScreen('rooms-screen');" style="margin-top: 10px;">رجوع للغرف</button>
+        </div>
+
+        <div id="chat-screen" class="hidden" style="width: 100%;">
+            <div class="chat-container-wide">
+                <div class="chat-header-bar">
+                    <h2 id="chat-room-title" style="margin: 0; font-size: 18px;">الشات النصي</h2>
+                    <button class="secondary-btn" style="width: auto; padding: 6px 15px; margin-top: 0; font-size: 13px;" onclick="exitChatRoom()">خروج من الغرفة</button>
+                </div>
+                <div class="chat-messages-area" id="chat-messages"></div>
+                <div class="chat-input-bar">
+                    <input type="text" id="chat-input" placeholder="اكتب رسالتك السرية هنا..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                    <button onclick="sendChatMessage()">إرسال 🚀</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="voice-screen" class="card hidden">
+            <h2 id="voice-room-title">غرفة الصوت المباشر</h2>
+            <div class="voice-container">
+                <div class="pulse-circle">متصل 🎙️</div>
+                <p style="color: var(--success); font-weight: bold; margin-bottom: 10px;">جارٍ تشغيل الميكروفون والاتصال بالمتواجدين...</p>
+            </div>
+            <p style="color: var(--accent); font-size: 13px; margin-bottom: 5px; text-align: right;">المتواجدون حالياً:</p>
+            <div class="voice-users-box" id="voice-users-list">
+                <div class="voice-user-item"><span>أنت</span><span style="color: var(--success);">متصل</span></div>
+            </div>
+            <button class="secondary-btn" onclick="leaveVoiceRoom()" style="margin-top: 10px;">مغادرة الغرفة الصوتية</button>
+        </div>
+
+        <div id="admin-screen" class="card hidden" style="max-width: 700px;">
+            <h2>لوحة تحكم الأدمن</h2>
+            <p style="margin-top: 10px; color: var(--accent);">طلبات الانضمام المعلقة:</p>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead><tr><th>الاسم الحقيقي</th><th>المستعار</th><th>الهاتف</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                    <tbody id="admin-requests-list"></tbody>
+                </table>
+            </div>
+            <p style="margin-top: 25px; color: var(--accent);">طلبات تغيير كلمات المرور:</p>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead><tr><th>الهاتف</th><th>الاسم</th><th>الباسورد الجديد</th><th>إجراء</th></tr></thead>
+                    <tbody id="admin-pass-requests-list"></tbody>
+                </table>
+            </div>
+            <button class="secondary-btn" style="margin-top: 20px;" onclick="showScreen('rooms-screen')">العودة للغرف</button>
+        </div>
     </div>
 
-    <div id="myRoomStatus" style="margin-top: 20px;"></div>
+    <footer>لا شئ يمر صدفه OSH</footer>
 
-    <!-- قسم لوحة تحكم الأدمن -->
-    <div class="admin-section">
-        <h3>لوحة تحكم الأدمن (طلبات الغرف المعلقة)</h3>
-        <div id="adminRoomsList">جاري التحميل...</div>
-    </div>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, update, push, onChildAdded, onChildRemoved, remove, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-<script>
-    // إعدادات فايربيس الخاصة بك (استبدلها بالمعلومات الخاصة بمشروعك)
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        databaseURL: "YOUR_DATABASE_URL",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOviagILjsY-MDxt0WFccNaYFWcqfyI8k",
+            authDomain: "safe-zone-9c5ef.firebaseapp.com",
+            projectId: "safe-zone-9c5ef",
+            storageBucket: "safe-zone-9c5ef.appspot.com",
+            messagingSenderId: "22170791568",
+            appId: "1:22170791568:web:ce1e310fec673ad387f215"
+        };
 
-    // تهيئة فايربيس
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    } else {
-        firebase.app();
-    }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    const db = firebase.database();
+        let currentUser = null;
+        let currentActiveRoom = '';
+        let roomType = 'text';
+        let localStream = null;
+        let qrStream = null;
+        let qrScanInterval = null;
+        let chatListenerRef = null;
+        let chatRemoveListenerRef = null;
 
-    // توليد معرف فريد للمستخدم وحفظه في المتصفح لضمان عدم إنشاء أكثر من غرفة لنفس الجهاز
-    let userId = localStorage.getItem('app_user_id');
-    if (!userId) {
-        userId = 'user_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('app_user_id', userId);
-    }
+        // تخزين الباسوردات محلياً وفي قاعدة البيانات
+        let roomPasswords = { 
+            'room1': 'room123456789000@', 
+            'room2': 'RoomOver555666', 
+            'voiceRoom': 'VoiceRome@000111' 
+        };
 
-    const roomNameInput = document.getElementById('roomNameInput');
-    const createRoomBtn = document.getElementById('createRoomBtn');
-    const userMessage = document.getElementById('userMessage');
-    const myRoomStatus = document.getElementById('myRoomStatus');
-    const adminRoomsList = document.getElementById('adminRoomsList');
-
-    // 1. التحقق من حالة غرفة المستخدم الحالي عند فتح الصفحة
-    function checkUserRoom() {
-        db.ref('customRooms').orderByChild('userId').equalTo(userId).once('value', (snapshot) => {
-            if (snapshot.exists()) {
-                let roomData;
-                let roomId;
-                snapshot.forEach((child) => {
-                    roomId = child.key;
-                    roomData = child.val();
-                });
-
-                createRoomBtn.style.display = 'none';
-                roomNameInput.style.display = 'none';
-
-                if (roomData.status === 'pending') {
-                    myRoomStatus.innerHTML = `لديك غرفة مسجلة باسم: <b>${roomData.roomName}</b> <br>الحالة: <span class="status-pending">قيد انتظار موافقة الأدمن ⏳</span>`;
-                } else if (roomData.status === 'approved') {
-                    myRoomStatus.innerHTML = `غرفتك <b>${roomData.roomName}</b> <span class="status-approved">مفعلة وجاهزة للاستخدام ✅</span>`;
-                }
-            }
-        });
-    }
-
-    checkUserRoom();
-
-    // 2. زر إنشاء الغرفة
-    createRoomBtn.addEventListener('click', () => {
-        const roomName = roomNameInput.value.trim();
-        if (!roomName) {
-            alert('الرجاء كتابة اسم الغرفة');
-            return;
+        function sanitizeInput(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
-        // التأكد مرة أخرى قبل الإرسال لمنع التلاعب
-        db.ref('customRooms').orderByChild('userId').equalTo(userId).once('value', (snapshot) => {
-            if (snapshot.exists()) {
-                alert('عذراً، لديك غرفة مسبقاً بالفعل ولا يمكنك إنشاء غرف أخرى.');
-                location.reload();
+        window.showScreen = function(screenId) {
+            stopQRCameraScan();
+            if(screenId !== 'voice-screen') { leaveVoiceRoomClean(); }
+            document.querySelectorAll('.card, #chat-screen').forEach(c => c.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            document.getElementById('profile-dropdown').classList.remove('active');
+            if(screenId === 'chat-screen') {
+                document.getElementById('main-container').classList.add('chat-fullscreen');
+            } else {
+                document.getElementById('main-container').classList.remove('chat-fullscreen');
+                if(screenId === 'rooms-screen') { loadRoomsList(); }
+            }
+        };
+
+        window.toggleProfileMenu = function() { document.getElementById('profile-dropdown').classList.toggle('active'); };
+
+        let lightOn = false;
+        window.toggleLight = function() {
+            lightOn = !lightOn;
+            document.body.style.background = lightOn ? 
+                "linear-gradient(135deg, #1e293b 0%, #312e81 50%, #4c1d95 100%)" : 
+                "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)";
+            document.getElementById('lampHead').style.boxShadow = lightOn ? "0 0 35px rgba(212, 175, 55, 0.8)" : "0 0 20px rgba(212, 175, 55, 0.4)";
+        };
+
+        window.registerUser = async function() {
+            const realName = sanitizeInput(document.getElementById('reg-real-name').value.trim());
+            const nickName = sanitizeInput(document.getElementById('reg-nick-name').value.trim());
+            const phone = sanitizeInput(document.getElementById('reg-phone').value.trim());
+            const pass = document.getElementById('reg-pass').value.trim();
+            if(!realName || !nickName || !phone || !pass) { alert('برجاء ملء جميع البيانات'); return; }
+            await set(ref(db, 'users/' + phone), { realName, nickName, pass, status: 'pending' });
+            alert('تم إرسال طلبك بنجاح، بانتظار موافقة الأدمن.');
+            window.showScreen('login-screen');
+        };
+
+        window.loginUser = async function() {
+            const phone = sanitizeInput(document.getElementById('log-phone').value.trim());
+            const pass = document.getElementById('log-pass').value.trim();
+            if(phone === 'admin' && pass === 'admin123') {
+                currentUser = { nickName: ' Doctor ', realName: ' Doctor', phone: 'admin', isAdmin: true };
+                setupUserSession();
+                window.showScreen('rooms-screen');
+                document.getElementById('admin-access-btn').classList.remove('hidden');
                 return;
             }
+            const snapshot = await get(ref(db, 'users/' + phone));
+            if(snapshot.exists()) {
+                const userData = snapshot.val();
+                if(userData.pass === pass) {
+                    if(userData.status === 'approved') {
+                        currentUser = userData; currentUser.phone = phone; currentUser.isAdmin = false;
+                        setupUserSession();
+                        window.showScreen('rooms-screen');
+                        document.getElementById('admin-access-btn').classList.add('hidden');
+                    } else { window.showScreen('pending-screen'); }
+                } else { alert('كلمة المرور غير صحيحة'); }
+            } else { alert('المستخدم غير موجود'); }
+        };
 
-            const newRoomRef = db.ref('customRooms').push();
-            const roomId = newRoomRef.key;
-
-            const roomData = {
-                roomId: roomId,
-                userId: userId,
-                roomName: roomName,
-                status: 'pending', // معلقة بانتظار الأدمن
-                createdAt: Date.now()
-            };
-
-            newRoomRef.set(roomData).then(() => {
-                alert('تم إرسال طلب إنشاء الغرفة بنجاح! بانتظار موافقة الأدمن.');
-                location.reload();
-            }).catch((error) => {
-                alert('حدث خطأ: ' + error.message);
-            });
-        });
-    });
-
-    // 3. جلب الغرف المعلقة للأدمن
-    db.ref('customRooms').on('value', (snapshot) => {
-        adminRoomsList.innerHTML = '';
-        let hasPending = false;
-
-        snapshot.forEach((childSnapshot) => {
-            const room = childSnapshot.val();
-            if (room.status === 'pending') {
-                hasPending = true;
-                const roomDiv = document.createElement('div');
-                roomDiv.className = 'room-card';
-                roomDiv.innerHTML = `
-                    <div>
-                        <b>اسم الغرفة:</b> ${room.roomName} <br>
-                        <small style="color: #666;">معرف المستخدم: ${room.userId}</small>
-                    </div>
-                    <button class="approve-btn" onclick="approveRoom('${room.roomId}')">موافقة وتفعيل</button>
-                `;
-                adminRoomsList.appendChild(roomDiv);
-            }
-        });
-
-        if (!hasPending) {
-            adminRoomsList.innerHTML = '<p style="color: #777;">لا توجد طلبات معلقة حالياً.</p>';
+        function setupUserSession() {
+            document.getElementById('profile-wrapper').classList.remove('hidden');
+            document.getElementById('drop-nick').innerText = currentUser.nickName;
+            document.getElementById('drop-real').innerText = `الاسم الحقيقي: ${currentUser.realName || 'أدمن'}`;
         }
-    });
 
-    // 4. دالة موافقة الأدمن
-    window.approveRoom = function(roomId) {
-        db.ref('customRooms/' + roomId).update({
-            status: 'approved'
-        }).then(() => {
-            alert('تمت الموافقة على الغرفة وتفعيلها بنجاح!');
-        }).catch((error) => {
-            alert('خطأ أثناء التحديث: ' + error.message);
-        });
-    };
-</script>
+        window.logoutUser = function() {
+            currentUser = null;
+            document.getElementById('profile-wrapper').classList.add('hidden');
+            window.showScreen('intro-screen');
+        };
 
+        window.requestPasswordChange = async function() {
+            const oldPass = document.getElementById('old-pass-input').value.trim();
+            const newPass = document.getElementById('new-pass-input').value.trim();
+            if(!oldPass || !newPass) { alert('يرجى ملء الحقول المطلوبة'); return; }
+            if(currentUser.isAdmin) { alert('الأدمن يمكنه تعديل إعداداته مباشرة.'); return; }
+            if(oldPass !== currentUser.pass) { alert('كلمة المرور القديمة غير صحيحة'); return; }
+            await set(ref(db, 'passRequests/' + currentUser.phone), {
+                phone: currentUser.phone, nickName: currentUser.nickName, realName: currentUser.realName, newPass: newPass
+            });
+            alert('تم إرسال طلب تغيير كلمة المرور للأدمن.');
+            window.showScreen('rooms-screen');
+        };
+
+        // --- تحميل وعرض الغرف (الافتراضية + المخصصة من قاعدة البيانات) ---
+        window.loadRoomsList = async function() {
+            const grid = document.getElementById('dynamic-rooms-grid');
+            grid.innerHTML = `
+                <div class="room-box" onclick="openRoom('غرفة التحدث النصي', 'room1', 'text')">
+                    <span>✍️</span><h4>التحدث النصي</h4>
+                </div>
+                <div class="room-box" onclick="openRoom('غرفة التفكير الحر', 'room2', 'text')">
+                    <span>💡</span><h4>Friends</h4>
+                </div>
+                <div class="room-box full-width" onclick="openRoom('غرفة الصوت الجماعية', 'voiceRoom', 'voice')">
+                    <span>🎙️</span><h4 style="color: #a78bfa;">غرفة الصوت المباشر</h4>
+                </div>
+            `;
+
+            const snapshot = await get(ref(db, 'customRooms'));
+            if(snapshot.exists()) {
+                snapshot.forEach((childSnap) => {
+                    const rKey = childSnap.key;
+                    const rData = childSnap.val();
+                    roomPasswords[rKey] = rData.password;
+                    grid.innerHTML += `
+                        <div class="room-box" onclick="openRoom('${sanitizeInput(rData.name)}', '${rKey}', 'text')">
+                            <span>💬</span><h4>${sanitizeInput(rData.name)}</h4>
+                        </div>
+                    `;
+                });
+            }
+        };
+
+        // --- إنشاء غرفة جديدة وحفظها في Firebase وتوليد QR ---
+        window.createNewRoom = async function() {
+            const name = sanitizeInput(document.getElementById('new-room-name-input').value.trim());
+            const pass = document.getElementById('new-room-pass-input').value.trim();
+            if(!name || !pass) { alert('يرجى إدخال اسم الغرفة وباسورد الدخول'); return; }
+
+            const roomId = 'custom_' + Date.now();
+            await set(ref(db, 'customRooms/' + roomId), { name, password: pass, creator: currentUser.nickName });
+            
+            roomPasswords[roomId] = pass;
+
+            document.getElementById('new-room-qrcode').innerHTML = '';
+            new QRCode(document.getElementById("new-room-qrcode"), {
+                text: pass,
+                width: 140,
+                height: 140
+            });
+            document.getElementById('created-room-info').innerText = `غرفة: ${name}`;
+            window.showScreen('room-qr-display-screen');
+        };
+
+        window.openRoom = function(roomName, roomId, type) {
+            currentActiveRoom = roomId; roomType = type;
+            document.getElementById('selected-room-title').innerText = roomName;
+            document.getElementById('room-pass-input').value = '';
+            window.showScreen('room-auth-screen');
+        };
+
+        window.verifyRoomPass = function() {
+            const enteredPass = document.getElementById('room-pass-input').value.trim();
+            if(enteredPass === roomPasswords[currentActiveRoom]) {
+                if(roomType === 'voice') { enterVoiceRoom(); } else { enterChatRoom(); }
+            } else { alert('كلمة مرور الغرفة غير صحيحة'); }
+        };
+
+        // --- قراءة QR من المعرض ---
+        window.scanQRFromFile = function(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    let width = img.width; let height = img.height;
+                    const maxDim = 800;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
+                        else { width = Math.round((width * maxDim) / height); height = maxDim; }
+                    }
+                    canvas.width = width; canvas.height = height;
+                    context.drawImage(img, 0, 0, width, height);
+                    const imgData = context.getImageData(0, 0, width, height);
+                    const code = jsQR(imgData.data, imgData.width, imgData.height);
+                    
+                    if(code && code.data === roomPasswords[currentActiveRoom]) {
+                        alert('تم التعرف على QR Code بنجاح!');
+                        if(roomType === 'voice') enterVoiceRoom(); else enterChatRoom();
+                    } else {
+                        alert('عذراً، لم يتم العثور على QR صالح أو متوافق مع هذه الغرفة في الصورة.');
+                    }
+                    event.target.value = '';
+                };
+                img.onerror = function() { alert('فشل تحميل الصورة.'); event.target.value = ''; };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.startQRCameraScan = async function() {
+            const videoElem = document.getElementById('qr-scanner-video');
+            document.getElementById('scanner-container').classList.remove('hidden');
+            try {
+                qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                videoElem.srcObject = qrStream; videoElem.setAttribute("playsinline", true); videoElem.play();
+                const canvasElem = document.createElement('canvas'); const canvasCtx = canvasElem.getContext('2d');
+                qrScanInterval = setInterval(() => {
+                    if(videoElem.readyState === videoElem.HAVE_ENOUGH_DATA) {
+                        canvasElem.width = videoElem.videoWidth; canvasElem.height = videoElem.videoHeight;
+                        canvasCtx.drawImage(videoElem, 0, 0, canvasElem.width, canvasElem.height);
+                        const imgData = canvasCtx.getImageData(0, 0, canvasElem.width, canvasElem.height);
+                        const code = jsQR(imgData.data, imgData.width, imgData.height);
+                        if(code && code.data === roomPasswords[currentActiveRoom]) {
+                            stopQRCameraScan();
+                            alert('تم قراءة الكود بنجاح!');
+                            if(roomType === 'voice') enterVoiceRoom(); else enterChatRoom();
+                        }
+                    }
+                }, 500);
+            } catch(err) {
+                alert('تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحيات.');
+                stopQRCameraScan();
+            }
+        };
+
+        window.stopQRCameraScan = function() {
+            if(qrScanInterval) { clearInterval(qrScanInterval); qrScanInterval = null; }
+            if(qrStream) { qrStream.getTracks().forEach(track => track.stop()); qrStream = null; }
+            document.getElementById('scanner-container').classList.add('hidden');
+        };
+
+        // --- الشات النصي ---
+        window.enterChatRoom = function() {
+            window.showScreen('chat-screen');
+            document.getElementById('chat-room-title').innerText = document.getElementById('selected-room-title').innerText;
+            loadChatMessages();
+        };
+
+        window.sendChatMessage = async function() {
+            const input = document.getElementById('chat-input');
+            const text = sanitizeInput(input.value.trim());
+            if(!text) return;
+            
+            const chatRef = ref(db, 'chats/' + currentActiveRoom);
+            await push(chatRef, {
+                sender: currentUser.nickName,
+                senderPhone: currentUser.phone,
+                text: text,
+                timestamp: Date.now()
+            });
+            input.value = '';
+        };
+
+        function loadChatMessages() {
+            const messagesArea = document.getElementById('chat-messages');
+            messagesArea.innerHTML = '';
+            
+            const chatRef = ref(db, 'chats/' + currentActiveRoom);
+            
+            if(chatListenerRef) off(chatRef, 'child_added', chatListenerRef);
+            if(chatRemoveListenerRef) off(chatRef, 'child_removed', chatRemoveListenerRef);
+
+            chatListenerRef = onChildAdded(chatRef, (snapshot) => {
+                const msgData = snapshot.val();
+                const msgKey = snapshot.key;
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-msg-bubble';
+                bubble.id = 'msg-' + msgKey;
+                
+                let deleteBtnHtml = '';
+                if(currentUser && (currentUser.isAdmin || currentUser.phone === msgData.senderPhone)) {
+                    deleteBtnHtml = `<button class="delete-msg-btn" onclick="deleteMessage('${currentActiveRoom}', '${msgKey}')" title="حذف الرسالة">🗑️</button>`;
+                }
+
+                bubble.innerHTML = `
+                    <div>
+                        <span style="color: var(--accent); font-size: 11px; display: block; margin-bottom: 2px;">${sanitizeInput(msgData.sender)}</span>
+                        <span style="font-size: 14px;">${sanitizeInput(msgData.text)}</span>
+                    </div>
+                    ${deleteBtnHtml}
+                `;
+                messagesArea.appendChild(bubble);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            });
+
+            chatRemoveListenerRef = onChildRemoved(chatRef, (snapshot) => {
+                const msgKey = snapshot.key;
+                const elem = document.getElementById('msg-' + msgKey);
+                if(elem) elem.remove();
+            });
+        }
+
+        window.deleteMessage = async function(roomId, msgKey) {
+            if(confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
+                await remove(ref(db, 'chats/' + roomId + '/' + msgKey));
+            }
+        };
+
+        window.exitChatRoom = function() {
+            const chatRef = ref(db, 'chats/' + currentActiveRoom);
+            if(chatListenerRef) off(chatRef, 'child_added', chatListenerRef);
+            if(chatRemoveListenerRef) off(chatRef, 'child_removed', chatRemoveListenerRef);
+            window.showScreen('rooms-screen');
+        };
+
+        // --- الغرفة الصوتية المباشرة ---
+        window.enterVoiceRoom = async function() {
+            window.showScreen('voice-screen');
+            document.getElementById('voice-room-title').innerText = document.getElementById('selected-room-title').innerText;
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                updateVoiceUsersList();
+            } catch(err) {
+                alert('تعذر فتح الميكروفون. يجدر التحقق من الصلاحيات.');
+                window.showScreen('rooms-screen');
+            }
+        };
+
+        window.leaveVoiceRoom = function() {
+            leaveVoiceRoomClean();
+            window.showScreen('rooms-screen');
+        };
+
+        function leaveVoiceRoomClean() {
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+        }
+
+        function updateVoiceUsersList() {
+            const listDiv = document.getElementById('voice-users-list');
+            if(currentUser) {
+                listDiv.innerHTML = `<div class="voice-user-item" style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <span>${sanitizeInput(currentUser.nickName)} (أنت)</span>
+                    <span style="color: var(--success);">متصل 🎙️</span>
+                </div>`;
+            }
+        }
+
+        // --- لوحة تحكم الأدمن ---
+        window.loadAdminData = async function() {
+            const reqList = document.getElementById('admin-requests-list');
+            const passReqList = document.getElementById('admin-pass-requests-list');
+            reqList.innerHTML = ''; passReqList.innerHTML = '';
+
+            const usersSnap = await get(ref(db, 'users'));
+            if(usersSnap.exists()) {
+                usersSnap.forEach((childSnap) => {
+                    const uPhone = childSnap.key;
+                    const uData = childSnap.val();
+                    if(uData.status === 'pending') {
+                        reqList.innerHTML += `
+                            <tr>
+                                <td>${sanitizeInput(uData.realName)}</td>
+                                <td>${sanitizeInput(uData.nickName)}</td>
+                                <td>${sanitizeInput(uPhone)}</td>
+                                <td class="badge-pending">قيد الانتظار</td>
+                                <td>
+                                    <button style="padding: 4px 10px; font-size: 11px; width: auto; background: var(--success); color:#fff;" onclick="approveUser('${uPhone}')">موافقة</button>
+                                    <button style="padding: 4px 10px; font-size: 11px; width: auto; background: var(--danger); color:#fff; margin-top:0;" onclick="rejectUser('${uPhone}')">رفض</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+
+            const passReqSnap = await get(ref(db, 'passRequests'));
+            if(passReqSnap.exists()) {
+                passReqSnap.forEach((childSnap) => {
+                    const pData = childSnap.val();
+                    const pPhone = childSnap.key;
+                    passReqList.innerHTML += `
+                        <tr>
+                            <td>${sanitizeInput(pPhone)}</td>
+                            <td>${sanitizeInput(pData.nickName)}</td>
+                            <td style="color: var(--accent); font-weight: bold;">${sanitizeInput(pData.newPass)}</td>
+                            <td>
+                                <button style="padding: 4px 10px; font-size: 11px; width: auto; background: var(--success); color:#fff;" onclick="approvePasswordChange('${pPhone}', '${pData.newPass}')">تنفيذ</button>
+                                <button style="padding: 4px 10px; font-size: 11px; width: auto; background: var(--danger); color:#fff; margin-top:0;" onclick="rejectPasswordChange('${pPhone}')">إلغاء</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        };
+
+        window.approveUser = async function(phone) {
+            await update(ref(db, 'users/' + phone), { status: 'approved' });
+            alert('تمت الموافقة على المستخدم.');
+            loadAdminData();
+        };
+
+        window.rejectUser = async function(phone) {
+            await remove(ref(db, 'users/' + phone));
+            alert('تم رفض وحذف الطلب.');
+            loadAdminData();
+        };
+
+        window.approvePasswordChange = async function(phone, newPass) {
+            await update(ref(db, 'users/' + phone), { pass: newPass });
+            await remove(ref(db, 'passRequests/' + phone));
+            alert('تم تحديث كلمة المرور بنجاح.');
+            loadAdminData();
+        };
+
+        window.rejectPasswordChange = async function(phone) {
+            await remove(ref(db, 'passRequests/' + phone));
+            alert('تم رفض طلب تغيير كلمة المرور.');
+            loadAdminData();
+        };
+    </script>
 </body>
 </html>
