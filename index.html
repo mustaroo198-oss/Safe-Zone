@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Safe Zone </title>
+    <!-- أيقونة المتصفح -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -272,29 +274,64 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px 0;
+            padding: 10px 0;
         }
         .pulse-circle {
-            width: 130px; height: 130px;
+            width: 100px; height: 100px;
             background: radial-gradient(circle, rgba(212,175,55,0.35) 0%, rgba(15,23,42,0.9) 70%);
             border: 2px solid var(--accent);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 35px rgba(212,175,55,0.25);
+            box-shadow: 0 0 25px rgba(212,175,55,0.25);
             animation: pulse-anim 2s infinite;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: bold;
             color: var(--accent);
-            font-size: 15px;
+            font-size: 13px;
             letter-spacing: 1px;
         }
         @keyframes pulse-anim {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(212, 175, 55, 0); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
         }
+        
+        .voice-users-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: right;
+            margin-bottom: 12px;
+        }
+        .voice-user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 13px;
+        }
+        .voice-user-item:last-child { border-bottom: none; }
+        .kick-btn {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 3px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            margin-top: 0;
+            box-shadow: none;
+        }
+        .kick-btn:hover { opacity: 0.8; transform: none; box-shadow: none; }
+
         #qr-scanner-video {
             width: 100%;
             max-height: 240px;
@@ -361,7 +398,7 @@
         <!-- نافذة طلب تغيير كلمة المرور عبر موافقة الأدمن -->
         <div id="change-pass-screen" class="card hidden">
             <h2>طلب تغيير كلمة المرور</h2>
-            <p>أدخل كلمتك القديمة والجديدة. سيتم إرسال الطلب للأدمن للموافقة عليه (ستظهر الباسورد للأدمن).</p>
+            <p>أدخل كلمتك القديمة والجديدة. سيتم إرسال الطلب للأدمن للموافقة عليه.</p>
             <input type="password" id="old-pass-input" placeholder="كلمة المرور القديمة">
             <input type="password" id="new-pass-input" placeholder="كلمة المرور الجديدة المقترحة">
             <button onclick="requestPasswordChange()">إرسال طلب التغيير للأدمن</button>
@@ -410,7 +447,7 @@
             <button class="secondary-btn" onclick="stopQRCameraScan(); showScreen('rooms-screen');" style="margin-top: 10px;">رجوع للغرف</button>
         </div>
 
-        <!-- 6. واجهة الشات النصي الآمنة والكبيرة -->
+        <!-- 6. واجهة الشات النصي الآمنة -->
         <div id="chat-screen" class="hidden" style="width: 100%;">
             <div class="chat-container-wide">
                 <div class="chat-header-bar">
@@ -425,20 +462,24 @@
             </div>
         </div>
 
-        <!-- 7. واجهة الغرفة الصوتية -->
+        <!-- 7. واجهة الغرفة الصوتية مع قائمة المتواجدين وصلاحية الطرد للأدمن -->
         <div id="voice-screen" class="card hidden">
             <h2 id="voice-room-title">غرفة الصوت الثابتة</h2>
             <div class="voice-container">
                 <div class="pulse-circle">Safe Zone</div>
-                <p id="voice-status-text" style="color: var(--success); font-weight: bold;">متصل بالمكالمة الصوتية</p>
+                <p id="voice-status-text" style="color: var(--success); font-weight: bold; margin-bottom: 10px;">متصل بالمكالمة الصوتية</p>
             </div>
             
-            <div id="admin-voice-controls" class="hidden" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                <p style="color: var(--accent); font-size: 13px; margin-bottom: 8px;">لوحة تحكم الأدمن للصوت:</p>
-                <button style="background: var(--danger); color: #fff; font-size: 13px; box-shadow: none;" onclick="adminToggleMuteAll()">كتم الصوت (Mute/Unmute)</button>
+            <p style="color: var(--accent); font-size: 13px; margin-bottom: 5px; text-align: right;">المتواجدون حالياً في الغرفة:</p>
+            <div class="voice-users-box" id="voice-users-list">
+                <!-- أسماء المتواجدين تظهر هنا -->
+            </div>
+            
+            <div id="admin-voice-controls" class="hidden" style="margin-top: 5px;">
+                <button style="background: #3b82f6; color: #fff; font-size: 13px; box-shadow: none; margin-bottom: 5px;" onclick="adminToggleMuteAll()">كتم / إلغاء كتم الميكروفون</button>
             </div>
 
-            <button class="secondary-btn" onclick="leaveVoiceRoom()" style="margin-top: 15px;">مغادرة الغرفة الصوتية</button>
+            <button class="secondary-btn" onclick="leaveVoiceRoom()" style="margin-top: 10px;">مغادرة الغرفة الصوتية</button>
         </div>
 
         <!-- 8. لوحة تحكم الأدمن -->
@@ -483,10 +524,10 @@
     <!-- البصمة الثابتة -->
     <footer>لا شئ يمر صدفه OSH</footer>
 
-    <!-- السكربت الآمن المحدث مع ميزة حذف الرسائل للأدمن -->
+    <!-- السكربت المحدث مع إدارة حضور الغرفة الصوتية وصلاحيات الطرد -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, update, push, onChildAdded, onChildRemoved, remove, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, update, push, onChildAdded, onChildRemoved, remove, off, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOviagILjsY-MDxt0WFccNaYFWcqfyI8k",
@@ -508,6 +549,8 @@
         let qrScanInterval = null;
         let chatListenerRef = null;
         let chatRemoveListenerRef = null;
+        let voicePresenceRef = null;
+        let voicePresenceListener = null;
         const roomPasswords = { 'room1': 'room123456789000@', 'room2': 'RoomOver555666', 'voiceRoom': 'VoiceRome@000111' };
 
         function sanitizeInput(str) {
@@ -518,6 +561,11 @@
 
         window.showScreen = function(screenId) {
             stopQRCameraScan();
+            // إذا غادر غرفة الصوت نظبط الخروج ونمسح الوجود
+            if(screenId !== 'voice-screen') {
+                leaveVoiceRoomClean();
+            }
+
             document.querySelectorAll('.card, #chat-screen').forEach(c => c.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
             document.getElementById('profile-dropdown').classList.remove('active');
@@ -745,7 +793,7 @@
             if(scannerContainer) scannerContainer.classList.add('hidden');
         };
 
-        // --- إدارة الشات مع دعم حذف الرسائل للأدمن (الدكتور) ---
+        // --- الشات النصي ---
         function enterChatRoom() {
             window.showScreen('chat-screen');
             document.getElementById('chat-room-title').innerText = "غرفة محادثة آمنة (مشفرة) - " + currentActiveRoom;
@@ -779,14 +827,11 @@
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             });
 
-            // تحديث واجهة المستخدم فور مسح رسالة من قاعدة البيانات لجميع المتصلين
             chatRemoveListenerRef = ref(db, 'chats/' + currentActiveRoom);
             onChildRemoved(chatRemoveListenerRef, (snapshot) => {
                 const msgId = snapshot.key;
                 const msgElem = document.getElementById('msg-' + msgId);
-                if (msgElem) {
-                    msgElem.remove();
-                }
+                if (msgElem) { msgElem.remove(); }
             });
         }
 
@@ -818,6 +863,7 @@
             }
         };
 
+        // --- الغرفة الصوتية المحدثة (مع عرض الأعضاء وصلاحية طرد الدكتور) ---
         async function enterVoiceRoom() {
             window.showScreen('voice-screen');
             document.getElementById('voice-room-title').innerText = "غرفة الصوت الجماعية";
@@ -834,13 +880,82 @@
             } catch (err) {
                 document.getElementById('voice-status-text').innerText = "تعذر الوصول للميكروفون";
             }
+
+            // تسجيل وجود المستخدم في الغرفة الصوتية داخل قاعدة البيانات
+            const userUniqueKey = currentUser.phone === 'admin' ? 'admin_doctor' : currentUser.phone;
+            voicePresenceRef = ref(db, 'voicePresence/' + userUniqueKey);
+            await set(voicePresenceRef, {
+                nickName: currentUser.nickName,
+                isAdmin: currentUser.isAdmin || false
+            });
+
+            // الاستماع لمن تم طرده أو خروجه لتحديث حالته لو تم طرده من الدكتور
+            onValue(voicePresenceRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    // تم طرد هذا المستخدم بواسطة الأدمن
+                    alert('تم إخراجك من الغرفة بواسطة الأدمن (الدكتور)');
+                    leaveVoiceRoom();
+                }
+            });
+
+            // عرض قائمة المتواجدين في الغرفة اللحظية
+            const usersListContainer = document.getElementById('voice-users-list');
+            const allPresenceRef = ref(db, 'voicePresence');
+            
+            if (voicePresenceListener) { off(allPresenceRef); }
+            
+            voicePresenceListener = onValue(allPresenceRef, (snapshot) => {
+                usersListContainer.innerHTML = '';
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnap) => {
+                        const uKey = childSnap.key;
+                        const uData = childSnap.val();
+                        
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'voice-user-item';
+                        
+                        let kickBtnHtml = '';
+                        // لو المستخدم الحالي هو الأدمن، يقدر يطرد أي شخص عدا نفسه
+                        if (currentUser && currentUser.isAdmin && uKey !== 'admin_doctor') {
+                            kickBtnHtml = `<button class="kick-btn" onclick="kickUserFromVoice('${uKey}')">طرد ❌</button>`;
+                        }
+
+                        itemDiv.innerHTML = `
+                            <span>🗣️ ${sanitizeInput(uData.nickName)} ${uData.isAdmin ? '(الدكتور)' : ''}</span>
+                            ${kickBtnHtml}
+                        `;
+                        usersListContainer.appendChild(itemDiv);
+                    });
+                }
+            });
         }
 
-        window.leaveVoiceRoom = function() {
+        window.kickUserFromVoice = async function(uKey) {
+            if (!currentUser || !currentUser.isAdmin) return;
+            if (confirm('هل أنت متأكد من طرد هذا المستخدم من الغرفة الصوتية؟')) {
+                const targetRef = ref(db, 'voicePresence/' + uKey);
+                await remove(targetRef);
+            }
+        };
+
+        function leaveVoiceRoomClean() {
             if(localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
+            if (voicePresenceRef) {
+                remove(voicePresenceRef);
+                voicePresenceRef = null;
+            }
+            const allPresenceRef = ref(db, 'voicePresence');
+            if (voicePresenceListener) {
+                off(allPresenceRef, voicePresenceListener);
+                voicePresenceListener = null;
+            }
+        }
+
+        window.leaveVoiceRoom = function() {
+            leaveVoiceRoomClean();
             window.showScreen('rooms-screen');
         };
 
