@@ -220,7 +220,6 @@
             </div>
         </div>
 
-        <!-- 1. واجهة الترحيب -->
         <div id="intro-screen" class="card">
             <div class="lamp-container" onclick="toggleLight()">
                 <div class="lamp-head" id="lampHead"></div>
@@ -232,7 +231,6 @@
             <button onclick="showScreen('register-screen')">بدء الجلسة</button>
         </div>
 
-        <!-- 2. واجهة التسجيل -->
         <div id="register-screen" class="card hidden">
             <h2>تسجيل هوية جديدة</h2>
             <input type="text" id="reg-real-name" placeholder="الاسم الحقيقي (للأدمن فقط)">
@@ -243,7 +241,6 @@
             <button class="secondary-btn" onclick="showScreen('login-screen')">لديك حساب؟ سجل دخول</button>
         </div>
 
-        <!-- 3. الدخول -->
         <div id="login-screen" class="card hidden">
             <h2>دخول البوابة</h2>
             <input type="text" id="log-phone" placeholder="رقم الهاتف">
@@ -266,7 +263,6 @@
             <button class="secondary-btn" onclick="showScreen('rooms-screen')">رجوع</button>
         </div>
 
-        <!-- 4. الغرف -->
         <div id="rooms-screen" class="card hidden">
             <h2>اختر الغرفة الآمنة</h2>
             <div class="rooms-grid">
@@ -285,7 +281,6 @@
             </div>
         </div>
 
-        <!-- 5. باسورد و QR -->
         <div id="room-auth-screen" class="card hidden">
             <h2 id="selected-room-title">الغرفة</h2>
             <p>أدخل كلمة مرور الغرفة أو استخدم ماسح الـ QR:</p>
@@ -301,7 +296,6 @@
             <button class="secondary-btn" onclick="stopQRCameraScan(); showScreen('rooms-screen');" style="margin-top: 10px;">رجوع للغرف</button>
         </div>
 
-        <!-- 6. الشات النصي -->
         <div id="chat-screen" class="hidden" style="width: 100%;">
             <div class="chat-container-wide">
                 <div class="chat-header-bar">
@@ -316,12 +310,11 @@
             </div>
         </div>
 
-        <!-- 7. الغرفة الصوتية المباشرة (WebRTC) -->
         <div id="voice-screen" class="card hidden">
             <h2 id="voice-room-title">غرفة الصوت المباشر</h2>
             <div class="voice-container">
                 <div class="pulse-circle" id="mic-pulse">متصل 🎙️</div>
-                <p id="voice-status-text" style="color: var(--success); font-weight: bold; margin-bottom: 10px;">جارٍ تشغيل الميكروفون والاتصال بالمشاركين...</p>
+                <p id="voice-status-text" style="color: var(--success); font-weight: bold; margin-bottom: 10px;">جارٍ تشغيل الميكروفون والاتصال بالمتواجدين...</p>
             </div>
             
             <p style="color: var(--accent); font-size: 13px; margin-bottom: 5px; text-align: right;">المتواجدون حالياً:</p>
@@ -333,7 +326,6 @@
             <button class="secondary-btn" onclick="leaveVoiceRoom()" style="margin-top: 10px;">مغادرة الغرفة الصوتية</button>
         </div>
 
-        <!-- 8. الأدمن -->
         <div id="admin-screen" class="card hidden" style="max-width: 700px;">
             <h2>لوحة تحكم الأدمن</h2>
             <p style="margin-top: 10px; color: var(--accent);">طلبات الانضمام المعلقة:</p>
@@ -384,6 +376,7 @@
         let voicePresenceListener = null;
 
         let peerConnection = null;
+        let signalsListenerRef = null;
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -590,7 +583,7 @@
             if (confirm('حذف هذه الرسالة؟')) await remove(ref(db, 'chats/' + currentActiveRoom + '/' + msgId));
         };
 
-        // --- نظام WebRTC الصوتي المباشر عبر الفايربيس ---
+        // --- نظام WebRTC الصوتي الفعال ---
         async function enterVoiceRoom() {
             window.showScreen('voice-screen');
             document.getElementById('voice-room-title').innerText = "غرفة الصوت المباشر (WebRTC)";
@@ -609,7 +602,8 @@
                     if (!snapshot.exists()) { alert('تم طردك من الغرفة'); leaveVoiceRoom(); }
                 });
 
-                initWebRTCConnection(myKey);
+                // بدء إعدادات الـ WebRTC وتبادل الإشارات عبر الفايربيس
+                setupSignalingAndPeer(myKey);
 
                 const usersListContainer = document.getElementById('voice-users-list');
                 voicePresenceListener = onValue(ref(db, 'voiceActiveUsers'), (snapshot) => {
@@ -631,7 +625,7 @@
             }
         }
 
-        function initWebRTCConnection(myKey) {
+        function setupSignalingAndPeer(myKey) {
             peerConnection = new RTCPeerConnection(rtcConfig);
 
             localStream.getTracks().forEach(track => {
@@ -652,6 +646,53 @@
                     push(ref(db, 'signals/' + currentActiveRoom + '/' + myKey + '/candidates'), event.candidate.toJSON());
                 }
             };
+
+            const roomSignalRef = ref(db, 'signals/' + currentActiveRoom);
+            
+            // إنشاء Offer لو أنت أول شخص، أو انتظار وإنشاء Answer
+            setTimeout(async () => {
+                const snap = await get(roomSignalRef);
+                let isOfferer = false;
+                if (!snap.exists() || Object.keys(snap.val() || {}).length <= 1) {
+                    isOfferer = true;
+                }
+
+                if (isOfferer) {
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    await set(ref(db, 'signals/' + currentActiveRoom + '/' + myKey + '/offer'), { type: offer.type, sdp: offer.sdp });
+                }
+
+                // الاستماع للإشارات الواردة من الطرف الآخر
+                signalsListenerRef = onValue(roomSignalRef, async (snapshot) => {
+                    if (!snapshot.exists()) return;
+                    snapshot.forEach(async (childSnap) => {
+                        const peerKey = childSnap.key;
+                        if (peerKey === myKey) return;
+                        const data = childSnap.val();
+
+                        if (data.offer && !isOfferer && !peerConnection.remoteDescription) {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            const answer = await peerConnection.createAnswer();
+                            await peerConnection.setLocalDescription(answer);
+                            await set(ref(db, 'signals/' + currentActiveRoom + '/' + myKey + '/answer'), { type: answer.type, sdp: answer.sdp });
+                        }
+
+                        if (data.answer && isOfferer && !peerConnection.remoteDescription) {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        }
+
+                        if (data.candidates) {
+                            Object.values(data.candidates).forEach(async (cand) => {
+                                try {
+                                    await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+                                } catch(e){}
+                            });
+                        }
+                    });
+                });
+
+            }, 1000);
         }
 
         window.kickUserFromVoice = async function(uKey) {
@@ -662,6 +703,7 @@
         function leaveVoiceRoomClean() {
             if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
             if(peerConnection) { peerConnection.close(); peerConnection = null; }
+            if(signalsListenerRef) { off(ref(db, 'signals/' + currentActiveRoom)); signalsListenerRef = null; }
             if(voicePresenceRef) { remove(voicePresenceRef); voicePresenceRef = null; }
             if(voicePresenceListener) { off(ref(db, 'voiceActiveUsers')); voicePresenceListener = null; }
         }
