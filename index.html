@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Safe Zone </title>
+    <title> Safe Zone - WebRTC Voice </title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -39,10 +39,7 @@
             align-items: center;
             position: relative;
         }
-        .container.chat-fullscreen {
-            max-width: 900px;
-            height: 90vh;
-        }
+        .container.chat-fullscreen { max-width: 900px; height: 90vh; }
         .card {
             background: var(--bg-card);
             backdrop-filter: blur(12px);
@@ -110,241 +107,108 @@
         .secondary-btn:hover { background: rgba(212, 175, 55, 0.1); }
         
         .profile-icon-wrapper {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            z-index: 100;
-            cursor: pointer;
+            position: absolute; top: 15px; left: 20px; z-index: 100; cursor: pointer;
         }
         .profile-btn {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: 0.3s;
+            background: rgba(30, 41, 59, 0.8); border: 1px solid var(--accent); color: var(--accent);
+            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s;
         }
         .profile-btn:hover { background: var(--accent); color: #0f172a; }
-        
         .profile-dropdown {
-            position: absolute;
-            top: 55px;
-            left: 0;
-            width: 260px;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--card-border);
-            border-radius: 15px;
-            padding: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            text-align: right;
-            display: none;
-            z-index: 101;
+            position: absolute; top: 55px; left: 0; width: 260px;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border); border-radius: 15px; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: right; display: none; z-index: 101;
         }
         .profile-dropdown.active { display: block; }
         .profile-dropdown h4 { color: var(--accent); font-size: 15px; margin-bottom: 5px; }
         .profile-dropdown p { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
 
         footer {
-            text-align: center;
-            padding: 15px;
-            font-size: 13px;
-            color: var(--accent);
-            letter-spacing: 1px;
-            opacity: 0.8;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            width: 100%;
+            text-align: center; padding: 15px; font-size: 13px; color: var(--accent);
+            letter-spacing: 1px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.05); width: 100%;
         }
         .hidden { display: none !important; }
         
-        .rooms-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
-        }
+        .rooms-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
         .room-box {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 20px 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px; padding: 20px 15px; text-align: center; cursor: pointer; transition: 0.3s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
         }
         .room-box:hover {
-            transform: translateY(-4px);
-            background: rgba(30, 41, 59, 0.8);
-            border-color: var(--accent);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
+            transform: translateY(-4px); background: rgba(30, 41, 59, 0.8);
+            border-color: var(--accent); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
         }
         .room-box span { font-size: 26px; }
         .room-box h4 { color: var(--text-main); font-size: 14px; font-weight: 600; }
         .room-box.full-width { grid-column: span 2; background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(30, 41, 59, 0.5)); border-color: rgba(139, 92, 246, 0.3); }
-        .room-box.full-width:hover { border-color: #8b5cf6; }
 
         .admin-table { width: 100%; font-size: 13px; text-align: right; margin-top: 15px; border-collapse: collapse; }
         .admin-table th, .admin-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .badge-pending { color: #facc15; }
-        .badge-approved { color: var(--success); }
         
         .chat-container-wide {
-            width: 100%;
-            height: 75vh;
-            background: rgba(15, 23, 42, 0.85);
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 15px;
+            width: 100%; height: 75vh; background: rgba(15, 23, 42, 0.85); border-radius: 16px;
+            border: 1px solid var(--card-border); display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px;
         }
         .chat-header-bar {
-            background: rgba(30, 41, 59, 0.9);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(30, 41, 59, 0.9); padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .chat-messages-area {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            text-align: right;
-            background: radial-gradient(circle at center, #111827 0%, #0b0f19 100%);
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 12px; text-align: right; background: radial-gradient(circle at center, #111827 0%, #0b0f19 100%);
         }
         .chat-msg-bubble {
-            background: rgba(30, 41, 59, 0.95);
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            max-width: 65%;
-            word-break: break-word;
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
+            background: rgba(30, 41, 59, 0.95); padding: 10px 16px; border-radius: 12px; font-size: 14px;
+            max-width: 65%; word-break: break-word; border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; gap: 10px;
         }
         .delete-msg-btn {
-            background: transparent;
-            color: var(--danger);
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            box-shadow: none;
-            width: auto;
-            margin-top: 0;
+            background: transparent; color: var(--danger); border: none; cursor: pointer;
+            font-size: 14px; padding: 2px 6px; border-radius: 4px; box-shadow: none; width: auto; margin-top: 0;
         }
-        .delete-msg-btn:hover { background: rgba(239, 68, 68, 0.15); transform: none; box-shadow: none; }
-
         .chat-input-bar {
-            padding: 15px;
-            background: rgba(30, 41, 59, 0.9);
-            display: flex;
-            gap: 10px;
-            align-items: center;
+            padding: 15px; background: rgba(30, 41, 59, 0.9); display: flex; gap: 10px; align-items: center;
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .chat-input-bar input { margin-bottom: 0; flex: 1; }
         .chat-input-bar button { width: auto; padding: 12px 25px; margin-top: 0; }
 
-        .voice-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 0;
-        }
+        .voice-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
         .pulse-circle {
             width: 100px; height: 100px;
             background: radial-gradient(circle, rgba(212,175,55,0.35) 0%, rgba(15,23,42,0.9) 70%);
-            border: 2px solid var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 25px rgba(212,175,55,0.25);
-            animation: pulse-anim 2s infinite;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: var(--accent);
-            font-size: 13px;
-            letter-spacing: 1px;
+            border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 25px rgba(212,175,55,0.25); animation: pulse-anim 2s infinite; margin-bottom: 10px;
+            font-weight: bold; color: var(--accent); font-size: 13px;
         }
         @keyframes pulse-anim {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
             70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
         }
-        
         .voice-users-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 12px;
-            width: 100%;
-            max-height: 150px;
-            overflow-y: auto;
-            text-align: right;
-            margin-bottom: 12px;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 12px; width: 100%; max-height: 150px; overflow-y: auto; text-align: right; margin-bottom: 12px;
         }
         .voice-user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;
         }
-        .voice-user-item:last-child { border-bottom: none; }
         .kick-btn {
-            background: var(--danger);
-            color: #fff;
-            border: none;
-            padding: 3px 8px;
-            font-size: 11px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: auto;
-            margin-top: 0;
-            box-shadow: none;
+            background: var(--danger); color: #fff; border: none; padding: 3px 8px;
+            font-size: 11px; border-radius: 4px; cursor: pointer; width: auto; margin-top: 0; box-shadow: none;
         }
-        .kick-btn:hover { opacity: 0.8; transform: none; box-shadow: none; }
-
-        #qr-scanner-video {
-            width: 100%;
-            max-height: 240px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 1px solid var(--accent);
-            margin-bottom: 15px;
-        }
+        #qr-scanner-video { width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; border: 1px solid var(--accent); margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
     <div class="container" id="main-container">
-        <!-- أيقونة البروفايل العلوية -->
         <div id="profile-wrapper" class="profile-icon-wrapper hidden">
             <div class="profile-btn" onclick="toggleProfileMenu()">👤</div>
             <div id="profile-dropdown" class="profile-dropdown">
@@ -379,7 +243,7 @@
             <button class="secondary-btn" onclick="showScreen('login-screen')">لديك حساب؟ سجل دخول</button>
         </div>
 
-        <!-- 3. واجهة تسجيل الدخول / الانتظار -->
+        <!-- 3. الدخول -->
         <div id="login-screen" class="card hidden">
             <h2>دخول البوابة</h2>
             <input type="text" id="log-phone" placeholder="رقم الهاتف">
@@ -390,58 +254,50 @@
 
         <div id="pending-screen" class="card hidden">
             <h2>طلبك قيد المراجعة</h2>
-            <p>بياناتك مسجلة الآن في قائمة الانتظار السرية. بانتظار موافقة الأدمن لفتح البوابة لك.</p>
+            <p>بياناتك مسجلة الآن في قائمة الانتظار. بانتظار موافقة الأدمن.</p>
             <button class="secondary-btn" onclick="showScreen('login-screen')">إعادة المحاولة</button>
         </div>
 
         <div id="change-pass-screen" class="card hidden">
             <h2>طلب تغيير كلمة المرور</h2>
-            <p>أدخل كلمتك القديمة والجديدة. سيتم إرسال الطلب للأدمن للموافقة عليه.</p>
             <input type="password" id="old-pass-input" placeholder="كلمة المرور القديمة">
             <input type="password" id="new-pass-input" placeholder="كلمة المرور الجديدة المقترحة">
             <button onclick="requestPasswordChange()">إرسال طلب التغيير للأدمن</button>
             <button class="secondary-btn" onclick="showScreen('rooms-screen')">رجوع</button>
         </div>
 
-        <!-- 4. لوحة اختيار الغرف -->
+        <!-- 4. الغرف -->
         <div id="rooms-screen" class="card hidden">
             <h2>اختر الغرفة الآمنة</h2>
             <div class="rooms-grid">
                 <div class="room-box" onclick="openRoom('غرفة التحدث النصي', 'room1', 'text')">
-                    <span>✍️</span>
-                    <h4>التحدث النصي</h4>
+                    <span>✍️</span><h4>التحدث النصي</h4>
                 </div>
                 <div class="room-box" onclick="openRoom('غرفة التفكير الحر', 'room2', 'text')">
-                    <span>💡</span>
-                    <h4>التفكير الحر</h4>
+                    <span>💡</span><h4>التفكير الحر</h4>
                 </div>
                 <div class="room-box full-width" onclick="openRoom('غرفة الصوت الجماعية', 'voiceRoom', 'voice')">
-                    <span>🎙️</span>
-                    <h4 style="color: #a78bfa;">غرفة الصوت الجماعية</h4>
+                    <span>🎙️</span><h4 style="color: #a78bfa;">غرفة الصوت المباشر (WebRTC)</h4>
                 </div>
             </div>
-            
             <div id="admin-access-btn" class="hidden" style="margin-top: 10px;">
                 <button style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #fff;" onclick="showScreen('admin-screen'); loadAdminData();">لوحة تحكم الأدمن</button>
             </div>
         </div>
 
-        <!-- 5. نافذة إدخال باسورد الغرفة أو QR Code -->
+        <!-- 5. باسورد و QR -->
         <div id="room-auth-screen" class="card hidden">
             <h2 id="selected-room-title">الغرفة</h2>
             <p>أدخل كلمة مرور الغرفة أو استخدم ماسح الـ QR:</p>
             <input type="password" id="room-pass-input" placeholder="باسورد الغرفة">
             <button onclick="verifyRoomPass()">دخول الغرفة</button>
-            
             <button class="secondary-btn" onclick="startQRCameraScan()">📷 مسح بالكاميرا المباشرة</button>
             <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="scanQRFromFile(event)">
             <button class="secondary-btn" onclick="document.getElementById('qr-file-input').click()">📁 اختيار صورة QR من المعرض</button>
-            
             <div id="scanner-container" class="hidden" style="margin-top: 15px;">
                 <video id="qr-scanner-video" playsinline></video>
                 <button class="secondary-btn" style="background: var(--danger); color: #fff; border: none;" onclick="stopQRCameraScan()">إيقاف الكاميرا</button>
             </div>
-
             <button class="secondary-btn" onclick="stopQRCameraScan(); showScreen('rooms-screen');" style="margin-top: 10px;">رجوع للغرف</button>
         </div>
 
@@ -460,61 +316,40 @@
             </div>
         </div>
 
-        <!-- 7. الغرفة الصوتية -->
+        <!-- 7. الغرفة الصوتية المباشرة (WebRTC) -->
         <div id="voice-screen" class="card hidden">
-            <h2 id="voice-room-title">غرفة الصوت الثابتة</h2>
+            <h2 id="voice-room-title">غرفة الصوت المباشر</h2>
             <div class="voice-container">
                 <div class="pulse-circle" id="mic-pulse">متصل 🎙️</div>
-                <p id="voice-status-text" style="color: var(--success); font-weight: bold; margin-bottom: 10px;">الميكروفون نشط ويبث صوتك</p>
+                <p id="voice-status-text" style="color: var(--success); font-weight: bold; margin-bottom: 10px;">جارٍ تشغيل الميكروفون والاتصال بالمشاركين...</p>
             </div>
             
-            <p style="color: var(--accent); font-size: 13px; margin-bottom: 5px; text-align: right;">المتواجدون حالياً في الغرفة:</p>
-            <div class="voice-users-box" id="voice-users-list">
-                <!-- الأسماء هنا -->
-            </div>
+            <p style="color: var(--accent); font-size: 13px; margin-bottom: 5px; text-align: right;">المتواجدون حالياً:</p>
+            <div class="voice-users-box" id="voice-users-list"></div>
             
             <div id="admin-voice-controls" class="hidden" style="margin-top: 5px;">
                 <button style="background: #3b82f6; color: #fff; font-size: 13px; box-shadow: none; margin-bottom: 5px;" onclick="adminToggleMuteAll()">كتم / إلغاء كتم الميكروفون</button>
             </div>
-
             <button class="secondary-btn" onclick="leaveVoiceRoom()" style="margin-top: 10px;">مغادرة الغرفة الصوتية</button>
         </div>
 
-        <!-- 8. لوحة الأدمن -->
+        <!-- 8. الأدمن -->
         <div id="admin-screen" class="card hidden" style="max-width: 700px;">
             <h2>لوحة تحكم الأدمن</h2>
-            
             <p style="margin-top: 10px; color: var(--accent);">طلبات الانضمام المعلقة:</p>
             <div style="overflow-x: auto;">
                 <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>الاسم الحقيقي</th>
-                            <th>المستعار</th>
-                            <th>الهاتف</th>
-                            <th>الحالة</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>الاسم الحقيقي</th><th>المستعار</th><th>الهاتف</th><th>الحالة</th><th>إجراء</th></tr></thead>
                     <tbody id="admin-requests-list"></tbody>
                 </table>
             </div>
-
             <p style="margin-top: 25px; color: var(--accent);">طلبات تغيير كلمات المرور:</p>
             <div style="overflow-x: auto;">
                 <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>الهاتف</th>
-                            <th>الاسم</th>
-                            <th>الباسورد الجديد المطلوب</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>الهاتف</th><th>الاسم</th><th>الباسورد الجديد</th><th>إجراء</th></tr></thead>
                     <tbody id="admin-pass-requests-list"></tbody>
                 </table>
             </div>
-
             <button class="secondary-btn" style="margin-top: 20px;" onclick="showScreen('rooms-screen')">العودة للغرف</button>
         </div>
     </div>
@@ -541,31 +376,33 @@
         let currentActiveRoom = '';
         let roomType = 'text';
         let localStream = null;
-        let audioContext = null;
         let qrStream = null;
         let qrScanInterval = null;
         let chatListenerRef = null;
         let chatRemoveListenerRef = null;
         let voicePresenceRef = null;
         let voicePresenceListener = null;
+
+        let peerConnection = null;
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
         const roomPasswords = { 'room1': 'room123456789000@', 'room2': 'RoomOver555666', 'voiceRoom': 'VoiceRome@000111' };
 
         function sanitizeInput(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
         window.showScreen = function(screenId) {
             stopQRCameraScan();
-            if(screenId !== 'voice-screen') {
-                leaveVoiceRoomClean();
-            }
-
+            if(screenId !== 'voice-screen') { leaveVoiceRoomClean(); }
             document.querySelectorAll('.card, #chat-screen').forEach(c => c.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
             document.getElementById('profile-dropdown').classList.remove('active');
-
             if(screenId === 'chat-screen') {
                 document.getElementById('main-container').classList.add('chat-fullscreen');
             } else {
@@ -573,9 +410,7 @@
             }
         };
 
-        window.toggleProfileMenu = function() {
-            document.getElementById('profile-dropdown').classList.toggle('active');
-        };
+        window.toggleProfileMenu = function() { document.getElementById('profile-dropdown').classList.toggle('active'); };
 
         let lightOn = false;
         window.toggleLight = function() {
@@ -591,14 +426,8 @@
             const nickName = sanitizeInput(document.getElementById('reg-nick-name').value.trim());
             const phone = sanitizeInput(document.getElementById('reg-phone').value.trim());
             const pass = document.getElementById('reg-pass').value.trim();
-
-            if(!realName || !nickName || !phone || !pass) {
-                alert('برجاء ملء جميع البيانات');
-                return;
-            }
-
-            const userRef = ref(db, 'users/' + phone);
-            await set(userRef, { realName, nickName, pass, status: 'pending' });
+            if(!realName || !nickName || !phone || !pass) { alert('برجاء ملء جميع البيانات'); return; }
+            await set(ref(db, 'users/' + phone), { realName, nickName, pass, status: 'pending' });
             alert('تم إرسال طلبك بنجاح، بانتظار موافقة الأدمن.');
             window.showScreen('login-screen');
         };
@@ -606,7 +435,6 @@
         window.loginUser = async function() {
             const phone = sanitizeInput(document.getElementById('log-phone').value.trim());
             const pass = document.getElementById('log-pass').value.trim();
-
             if(phone === 'admin' && pass === 'admin123') {
                 currentUser = { nickName: ' Doctor ', realName: ' Doctor', phone: 'admin', isAdmin: true };
                 setupUserSession();
@@ -614,29 +442,18 @@
                 document.getElementById('admin-access-btn').classList.remove('hidden');
                 return;
             }
-
-            const userRef = ref(db, 'users/' + phone);
-            const snapshot = await get(userRef);
-
+            const snapshot = await get(ref(db, 'users/' + phone));
             if(snapshot.exists()) {
                 const userData = snapshot.val();
                 if(userData.pass === pass) {
                     if(userData.status === 'approved') {
-                        currentUser = userData;
-                        currentUser.phone = phone;
-                        currentUser.isAdmin = false;
+                        currentUser = userData; currentUser.phone = phone; currentUser.isAdmin = false;
                         setupUserSession();
                         window.showScreen('rooms-screen');
                         document.getElementById('admin-access-btn').classList.add('hidden');
-                    } else {
-                        window.showScreen('pending-screen');
-                    }
-                } else {
-                    alert('كلمة المرور غير صحيحة');
-                }
-            } else {
-                alert('المستخدم غير موجود');
-            }
+                    } else { window.showScreen('pending-screen'); }
+                } else { alert('كلمة المرور غير صحيحة'); }
+            } else { alert('المستخدم غير موجود'); }
         };
 
         function setupUserSession() {
@@ -654,39 +471,18 @@
         window.requestPasswordChange = async function() {
             const oldPass = document.getElementById('old-pass-input').value.trim();
             const newPass = document.getElementById('new-pass-input').value.trim();
-
-            if(!oldPass || !newPass) {
-                alert('يرجى ملء الحقول المطلوبة');
-                return;
-            }
-
-            if(currentUser.isAdmin) {
-                alert('الأدمن يمكنه تعديل إعداداته مباشرة.');
-                return;
-            }
-
-            if(oldPass !== currentUser.pass) {
-                alert('كلمة المرور القديمة غير صحيحة');
-                return;
-            }
-
-            const passReqRef = ref(db, 'passRequests/' + currentUser.phone);
-            await set(passReqRef, {
-                phone: currentUser.phone,
-                nickName: currentUser.nickName,
-                realName: currentUser.realName,
-                newPass: newPass
+            if(!oldPass || !newPass) { alert('يرجى ملء الحقول المطلوبة'); return; }
+            if(currentUser.isAdmin) { alert('الأدمن يمكنه تعديل إعداداته مباشرة.'); return; }
+            if(oldPass !== currentUser.pass) { alert('كلمة المرور القديمة غير صحيحة'); return; }
+            await set(ref(db, 'passRequests/' + currentUser.phone), {
+                phone: currentUser.phone, nickName: currentUser.nickName, realName: currentUser.realName, newPass: newPass
             });
-
-            alert('تم إرسال طلب تغيير كلمة المرور إلى الأدمن للمراجعة.');
-            document.getElementById('old-pass-input').value = '';
-            document.getElementById('new-pass-input').value = '';
+            alert('تم إرسال طلب تغيير كلمة المرور للأدمن.');
             window.showScreen('rooms-screen');
         };
 
         window.openRoom = function(roomName, roomId, type) {
-            currentActiveRoom = roomId;
-            roomType = type;
+            currentActiveRoom = roomId; roomType = type;
             document.getElementById('selected-room-title').innerText = roomName;
             document.getElementById('room-pass-input').value = '';
             window.showScreen('room-auth-screen');
@@ -695,14 +491,8 @@
         window.verifyRoomPass = function() {
             const enteredPass = document.getElementById('room-pass-input').value.trim();
             if(enteredPass === roomPasswords[currentActiveRoom]) {
-                if(roomType === 'voice') {
-                    enterVoiceRoom();
-                } else {
-                    enterChatRoom();
-                }
-            } else {
-                alert('كلمة مرور الغرفة غير صحيحة');
-            }
+                if(roomType === 'voice') { enterVoiceRoom(); } else { enterChatRoom(); }
+            } else { alert('كلمة مرور الغرفة غير صحيحة'); }
         };
 
         window.scanQRFromFile = function(event) {
@@ -714,22 +504,14 @@
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+                    canvas.width = img.width; canvas.height = img.height;
                     context.drawImage(img, 0, 0, img.width, img.height);
-                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height);
-                    if(code) {
-                        if(code.data === roomPasswords[currentActiveRoom]) {
-                            alert('تم التعرف على QR Code بنجاح!');
-                            if(roomType === 'voice') enterVoiceRoom();
-                            else enterChatRoom();
-                        } else {
-                            alert('كود QR لا يطابق هذه الغرفة');
-                        }
-                    } else {
-                        alert('لم يتم العثور على QR صالح في الصورة');
-                    }
+                    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imgData.data, imgData.width, imgData.height);
+                    if(code && code.data === roomPasswords[currentActiveRoom]) {
+                        alert('تم التعرف على QR Code بنجاح!');
+                        if(roomType === 'voice') enterVoiceRoom(); else enterChatRoom();
+                    } else { alert('كود QR غير صالح أو لا يطابق هذه الغرفة'); }
                 };
                 img.src = e.target.result;
             };
@@ -741,92 +523,51 @@
             document.getElementById('scanner-container').classList.remove('hidden');
             try {
                 qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                videoElem.srcObject = qrStream;
-                videoElem.setAttribute("playsinline", true);
-                videoElem.play();
-                
-                const canvasElem = document.createElement('canvas');
-                const canvasCtx = canvasElem.getContext('2d');
-
+                videoElem.srcObject = qrStream; videoElem.setAttribute("playsinline", true); videoElem.play();
+                const canvasElem = document.createElement('canvas'); const canvasCtx = canvasElem.getContext('2d');
                 qrScanInterval = setInterval(() => {
                     if(videoElem.readyState === videoElem.HAVE_ENOUGH_DATA) {
-                        canvasElem.width = videoElem.videoWidth;
-                        canvasElem.height = videoElem.videoHeight;
+                        canvasElem.width = videoElem.videoWidth; canvasElem.height = videoElem.videoHeight;
                         canvasCtx.drawImage(videoElem, 0, 0, canvasElem.width, canvasElem.height);
                         const imgData = canvasCtx.getImageData(0, 0, canvasElem.width, canvasElem.height);
                         const code = jsQR(imgData.data, imgData.width, imgData.height);
-                        
-                        if(code) {
-                            if(code.data === roomPasswords[currentActiveRoom]) {
-                                stopQRCameraScan();
-                                alert('تم قراءة كود الغرفة عبر الكاميرا بنجاح!');
-                                if(roomType === 'voice') enterVoiceRoom();
-                                else enterChatRoom();
-                            } else {
-                                alert('كود QR المعروض لا يطابق هذه الغرفة');
-                                stopQRCameraScan();
-                            }
+                        if(code && code.data === roomPasswords[currentActiveRoom]) {
+                            stopQRCameraScan();
+                            alert('تم قراءة الكود بنجاح!');
+                            if(roomType === 'voice') enterVoiceRoom(); else enterChatRoom();
                         }
                     }
                 }, 500);
-            } catch (err) {
-                alert('تعذر الوصول لكاميرا الجهاز، يرجى التأكد من الصلاحيات.');
-                document.getElementById('scanner-container').classList.add('hidden');
-            }
+            } catch (err) { alert('تعذر الوصول للكاميرا.'); document.getElementById('scanner-container').classList.add('hidden'); }
         };
 
         window.stopQRCameraScan = function() {
-            if(qrScanInterval) {
-                clearInterval(qrScanInterval);
-                qrScanInterval = null;
-            }
-            if(qrStream) {
-                qrStream.getTracks().forEach(track => track.stop());
-                qrStream = null;
-            }
-            const scannerContainer = document.getElementById('scanner-container');
-            if(scannerContainer) scannerContainer.classList.add('hidden');
+            if(qrScanInterval) { clearInterval(qrScanInterval); qrScanInterval = null; }
+            if(qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+            const sc = document.getElementById('scanner-container'); if(sc) sc.classList.add('hidden');
         };
 
         // --- الشات النصي ---
         function enterChatRoom() {
             window.showScreen('chat-screen');
             document.getElementById('chat-room-title').innerText = "غرفة محادثة آمنة - " + currentActiveRoom;
-            const messagesArea = document.getElementById('chat-messages');
-            messagesArea.innerHTML = '';
-
-            if (chatListenerRef) { off(chatListenerRef); }
-            if (chatRemoveListenerRef) { off(chatRemoveListenerRef); }
+            const messagesArea = document.getElementById('chat-messages'); messagesArea.innerHTML = '';
+            if (chatListenerRef) off(chatListenerRef);
+            if (chatRemoveListenerRef) off(chatRemoveListenerRef);
 
             chatListenerRef = ref(db, 'chats/' + currentActiveRoom);
             onChildAdded(chatListenerRef, (snapshot) => {
-                const msgId = snapshot.key;
-                const msgData = snapshot.val();
-                
+                const msgId = snapshot.key; const msgData = snapshot.val();
                 if (document.getElementById('msg-' + msgId)) return;
-
                 const msgDiv = document.createElement('div');
-                msgDiv.className = 'chat-msg-bubble';
-                msgDiv.id = 'msg-' + msgId;
-
-                let deleteBtnHtml = '';
-                if (currentUser && currentUser.isAdmin) {
-                    deleteBtnHtml = `<button class="delete-msg-btn" onclick="deleteChatMessage('${msgId}')">🗑️ حذف</button>`;
-                }
-
-                msgDiv.innerHTML = `
-                    <div style="flex:1;"><strong>${sanitizeInput(msgData.sender)}:</strong> ${sanitizeInput(msgData.text)}</div>
-                    ${deleteBtnHtml}
-                `;
-                messagesArea.appendChild(msgDiv);
-                messagesArea.scrollTop = messagesArea.scrollHeight;
+                msgDiv.className = 'chat-msg-bubble'; msgDiv.id = 'msg-' + msgId;
+                let deleteBtnHtml = currentUser && currentUser.isAdmin ? `<button class="delete-msg-btn" onclick="deleteChatMessage('${msgId}')">🗑️</button>` : '';
+                msgDiv.innerHTML = `<div style="flex:1;"><strong>${sanitizeInput(msgData.sender)}:</strong> ${sanitizeInput(msgData.text)}</div>${deleteBtnHtml}`;
+                messagesArea.appendChild(msgDiv); messagesArea.scrollTop = messagesArea.scrollHeight;
             });
-
             chatRemoveListenerRef = ref(db, 'chats/' + currentActiveRoom);
             onChildRemoved(chatRemoveListenerRef, (snapshot) => {
-                const msgId = snapshot.key;
-                const msgElem = document.getElementById('msg-' + msgId);
-                if (msgElem) { msgElem.remove(); }
+                const msgElem = document.getElementById('msg-' + snapshot.key); if (msgElem) msgElem.remove();
             });
         }
 
@@ -840,123 +581,89 @@
             const inputElem = document.getElementById('chat-input');
             const text = inputElem.value.trim();
             if(!text) return;
-
-            const chatRef = ref(db, 'chats/' + currentActiveRoom);
-            await push(chatRef, {
-                sender: currentUser.nickName,
-                text: text,
-                timestamp: Date.now()
-            });
+            await push(ref(db, 'chats/' + currentActiveRoom), { sender: currentUser.nickName, text: text, timestamp: Date.now() });
             inputElem.value = '';
         };
 
         window.deleteChatMessage = async function(msgId) {
             if (!currentUser || !currentUser.isAdmin) return;
-            if (confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
-                const msgRef = ref(db, 'chats/' + currentActiveRoom + '/' + msgId);
-                await remove(msgRef);
-            }
+            if (confirm('حذف هذه الرسالة؟')) await remove(ref(db, 'chats/' + currentActiveRoom + '/' + msgId));
         };
 
-        // --- الغرفة الصوتية المحدثة والنشطة ---
+        // --- نظام WebRTC الصوتي المباشر عبر الفايربيس ---
         async function enterVoiceRoom() {
             window.showScreen('voice-screen');
-            document.getElementById('voice-room-title').innerText = "غرفة الصوت الجماعية";
-            
-            if(currentUser.isAdmin) {
-                document.getElementById('admin-voice-controls').classList.remove('hidden');
-            } else {
-                document.getElementById('admin-voice-controls').classList.add('hidden');
-            }
+            document.getElementById('voice-room-title').innerText = "غرفة الصوت المباشر (WebRTC)";
+            if(currentUser.isAdmin) { document.getElementById('admin-voice-controls').classList.remove('hidden'); }
+            else { document.getElementById('admin-voice-controls').classList.add('hidden'); }
 
             try {
-                // تفعيل الميكروفون الحقيقي بدعم Web Audio API لمعالجة الصوت
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createMediaStreamSource(localStream);
-                // ربط الميكروفون بموجات الرصد للتحقق من عمله
-                const analyser = audioContext.createAnalyser();
-                source.connect(analyser);
-                
-                document.getElementById('voice-status-text').innerText = "متصل بالمكالمة الصوتية ويبث بنجاح 🎙️";
+                document.getElementById('voice-status-text').innerText = "الميكروفون نشط، جارٍ الاتصال بالشبكة الصوتية 🎙️";
+
+                const myKey = (currentUser.phone === 'admin' || currentUser.isAdmin) ? 'admin_' + Date.now() : 'user_' + currentUser.phone;
+                voicePresenceRef = ref(db, 'voiceActiveUsers/' + myKey);
+                await set(voicePresenceRef, { nickName: currentUser.nickName, isAdmin: currentUser.isAdmin || false, joinedAt: Date.now() });
+
+                onValue(voicePresenceRef, (snapshot) => {
+                    if (!snapshot.exists()) { alert('تم طردك من الغرفة'); leaveVoiceRoom(); }
+                });
+
+                initWebRTCConnection(myKey);
+
+                const usersListContainer = document.getElementById('voice-users-list');
+                voicePresenceListener = onValue(ref(db, 'voiceActiveUsers'), (snapshot) => {
+                    usersListContainer.innerHTML = '';
+                    if (snapshot.exists()) {
+                        snapshot.forEach((childSnap) => {
+                            const uKey = childSnap.key; const uData = childSnap.val();
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'voice-user-item';
+                            let kickBtn = (currentUser && currentUser.isAdmin && !uKey.startsWith('admin')) ? `<button class="kick-btn" onclick="kickUserFromVoice('${uKey}')">طرد ❌</button>` : '';
+                            itemDiv.innerHTML = `<span>🗣️ ${sanitizeInput(uData.nickName)} ${uData.isAdmin ? '(الدكتور)' : ''}</span>${kickBtn}`;
+                            usersListContainer.appendChild(itemDiv);
+                        });
+                    }
+                });
+
             } catch (err) {
-                document.getElementById('voice-status-text').innerText = "تعذر الوصول للميكروفون أو الصلاحية مرفوضة";
+                document.getElementById('voice-status-text').innerText = "تعذر الوصول للميكروفون أو الصلاحية مرفوضة.";
             }
+        }
 
-            // كتابة الوجود اللحظي في قاعدة البيانات
-            const userUniqueKey = (currentUser.phone === 'admin' || currentUser.isAdmin) ? 'admin_doctor_' + Date.now() : 'user_' + currentUser.phone;
-            voicePresenceRef = ref(db, 'voiceActiveUsers/' + userUniqueKey);
-            await set(voicePresenceRef, {
-                nickName: currentUser.nickName,
-                isAdmin: currentUser.isAdmin || false,
-                joinedAt: Date.now()
+        function initWebRTCConnection(myKey) {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
             });
 
-            // الاستماع لحالة الطرد
-            onValue(voicePresenceRef, (snapshot) => {
-                if (!snapshot.exists()) {
-                    alert('تم إخراجك من الغرفة بواسطة الأدمن');
-                    leaveVoiceRoom();
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.createElement('audio');
+                remoteAudio.srcObject = event.streams[0];
+                remoteAudio.autoplay = true;
+                remoteAudio.controls = false;
+                document.body.appendChild(remoteAudio);
+                document.getElementById('voice-status-text').innerText = "متصل صوتياً بالمشاركين بوضوح تام 🔊";
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    push(ref(db, 'signals/' + currentActiveRoom + '/' + myKey + '/candidates'), event.candidate.toJSON());
                 }
-            });
-
-            // تحديث قائمة المتواجدين في الوقت الفعلي
-            const usersListContainer = document.getElementById('voice-users-list');
-            const allVoiceRef = ref(db, 'voiceActiveUsers');
-            
-            if (voicePresenceListener) { off(allVoiceRef); }
-            
-            voicePresenceListener = onValue(allVoiceRef, (snapshot) => {
-                usersListContainer.innerHTML = '';
-                if (snapshot.exists()) {
-                    snapshot.forEach((childSnap) => {
-                        const uKey = childSnap.key;
-                        const uData = childSnap.val();
-                        
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'voice-user-item';
-                        
-                        let kickBtnHtml = '';
-                        if (currentUser && currentUser.isAdmin && !uKey.startsWith('admin_doctor')) {
-                            kickBtnHtml = `<button class="kick-btn" onclick="kickUserFromVoice('${uKey}')">طرد ❌</button>`;
-                        }
-
-                        itemDiv.innerHTML = `
-                            <span>🗣️ ${sanitizeInput(uData.nickName)} ${uData.isAdmin ? '(الدكتور)' : ''}</span>
-                            ${kickBtnHtml}
-                        `;
-                        usersListContainer.appendChild(itemDiv);
-                    });
-                }
-            });
+            };
         }
 
         window.kickUserFromVoice = async function(uKey) {
             if (!currentUser || !currentUser.isAdmin) return;
-            if (confirm('هل تريد طرد هذا المستخدم من الغرفة؟')) {
-                const targetRef = ref(db, 'voiceActiveUsers/' + uKey);
-                await remove(targetRef);
-            }
+            if (confirm('طرد هذا المستخدم؟')) await remove(ref(db, 'voiceActiveUsers/' + uKey));
         };
 
         function leaveVoiceRoomClean() {
-            if(localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            if(audioContext) {
-                audioContext.close();
-                audioContext = null;
-            }
-            if (voicePresenceRef) {
-                remove(voicePresenceRef);
-                voicePresenceRef = null;
-            }
-            const allVoiceRef = ref(db, 'voiceActiveUsers');
-            if (voicePresenceListener) {
-                off(allVoiceRef, voicePresenceListener);
-                voicePresenceListener = null;
-            }
+            if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+            if(peerConnection) { peerConnection.close(); peerConnection = null; }
+            if(voicePresenceRef) { remove(voicePresenceRef); voicePresenceRef = null; }
+            if(voicePresenceListener) { off(ref(db, 'voiceActiveUsers')); voicePresenceListener = null; }
         }
 
         window.leaveVoiceRoom = function() {
@@ -967,71 +674,43 @@
         window.adminToggleMuteAll = function() {
             if(localStream) {
                 const audioTrack = localStream.getAudioTracks()[0];
-                if(audioTrack) {
-                    audioTrack.enabled = !audioTrack.enabled;
-                    alert(audioTrack.enabled ? "تم فتح الميكروفون" : "تم كتم الميكروفون");
-                }
+                if(audioTrack) { audioTrack.enabled = !audioTrack.enabled; alert(audioTrack.enabled ? "تم فتح الميكروفون" : "تم كتم الميكروفون"); }
             }
         };
 
         window.loadAdminData = async function() {
             const requestsList = document.getElementById('admin-requests-list');
             const passRequestsList = document.getElementById('admin-pass-requests-list');
-            requestsList.innerHTML = '';
-            passRequestsList.innerHTML = '';
+            requestsList.innerHTML = ''; passRequestsList.innerHTML = '';
 
-            const usersRef = ref(db, 'users');
-            const usersSnap = await get(usersRef);
+            const usersSnap = await get(ref(db, 'users'));
             if(usersSnap.exists()) {
                 usersSnap.forEach((childSnap) => {
-                    const phone = childSnap.key;
-                    const user = childSnap.val();
+                    const phone = childSnap.key; const user = childSnap.val();
                     if(user.status === 'pending') {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${user.realName}</td>
-                            <td>${user.nickName}</td>
-                            <td>${phone}</td>
-                            <td class="badge-pending">معلق</td>
-                            <td><button style="padding: 5px 10px; font-size: 12px; width: auto;" onclick="approveUser('${phone}')">موافقة</button></td>
-                        `;
-                        requestsList.appendChild(row);
+                        requestsList.innerHTML += `<tr><td>${user.realName}</td><td>${user.nickName}</td><td>${phone}</td><td class="badge-pending">معلق</td><td><button style="padding:5px 10px;font-size:12px;width:auto;" onclick="approveUser('${phone}')">موافقة</button></td></tr>`;
                     }
                 });
             }
 
-            const passReqRef = ref(db, 'passRequests');
-            const passReqSnap = await get(passReqRef);
+            const passReqSnap = await get(ref(db, 'passRequests'));
             if(passReqSnap.exists()) {
                 passReqSnap.forEach((childSnap) => {
-                    const phone = childSnap.key;
-                    const reqData = childSnap.val();
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${phone}</td>
-                        <td>${reqData.nickName}</td>
-                        <td style="color: var(--accent);">${reqData.newPass}</td>
-                        <td><button style="padding: 5px 10px; font-size: 12px; width: auto; background: var(--success); color:#fff;" onclick="approvePasswordChange('${phone}', '${reqData.newPak || reqData.newPass}')">تنفيذ</button></td>
-                    `;
-                    passRequestsList.appendChild(row);
+                    const phone = childSnap.key; const reqData = childSnap.val();
+                    passRequestsList.innerHTML += `<tr><td>${phone}</td><td>${reqData.nickName}</td><td style="color:var(--accent);">${reqData.newPass}</td><td><button style="padding:5px 10px;font-size:12px;width:auto;background:var.success;color:#fff;" onclick="approvePasswordChange('${phone}', '${reqData.newPass}')">تنفيذ</button></td></tr>`;
                 });
             }
         };
 
         window.approveUser = async function(phone) {
-            const userRef = ref(db, 'users/' + phone);
-            await update(userRef, { status: 'approved' });
-            alert('تمت الموافقة بنجاح');
-            loadAdminData();
+            await update(ref(db, 'users/' + phone), { status: 'approved' });
+            alert('تمت الموافقة بنجاح'); loadAdminData();
         };
 
         window.approvePasswordChange = async function(phone, newPass) {
-            const userRef = ref(db, 'users/' + phone);
-            await update(userRef, { pass: newPass });
-            const passReqRef = ref(db, 'passRequests/' + phone);
-            await remove(passReqRef);
-            alert('تم تعديل كلمة المرور بنجاح');
-            loadAdminData();
+            await update(ref(db, 'users/' + phone), { pass: newPass });
+            await remove(ref(db, 'passRequests/' + phone));
+            alert('تم تغيير كلمة المرور بنجاح'); loadAdminData();
         };
     </script>
 </body>
