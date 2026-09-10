@@ -488,23 +488,51 @@
             } else { alert('كلمة مرور الغرفة غير صحيحة'); }
         };
 
+        // --- معالجة قوية ومحسنة لقراءة الـ QR من المعرض من غير تعليق ---
         window.scanQRFromFile = function(event) {
             const file = event.target.files[0];
             if(!file) return;
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    canvas.width = img.width; canvas.height = img.height;
-                    context.drawImage(img, 0, 0, img.width, img.height);
-                    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // تحجيم الصورة لتسريع القراءة ومنع أي تعليق على صور الجوالات الضخمة
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 800;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    context.drawImage(img, 0, 0, width, height);
+                    
+                    const imgData = context.getImageData(0, 0, width, height);
                     const code = jsQR(imgData.data, imgData.width, imgData.height);
+                    
                     if(code && code.data === roomPasswords[currentActiveRoom]) {
                         alert('تم التعرف على QR Code بنجاح!');
                         if(roomType === 'voice') enterVoiceRoom(); else enterChatRoom();
-                    } else { alert('كود QR غير صالح أو لا يطابق هذه الغرفة'); }
+                    } else {
+                        alert('عذراً، لم يتم العثور على QR صالح أو متوافق مع هذه الغرفة في الصورة المحددة.');
+                    }
+                    // تصفير الـ input عشان يسمح باختيار نفس الصورة لو حبيت
+                    event.target.value = '';
+                };
+                img.onerror = function() {
+                    alert('فشل تحميل الصورة، جرب صورة أخرى.');
+                    event.target.value = '';
                 };
                 img.src = e.target.result;
             };
@@ -602,7 +630,6 @@
                     if (!snapshot.exists()) { alert('تم طردك من الغرفة'); leaveVoiceRoom(); }
                 });
 
-                // بدء إعدادات الـ WebRTC وتبادل الإشارات عبر الفايربيس
                 setupSignalingAndPeer(myKey);
 
                 const usersListContainer = document.getElementById('voice-users-list');
@@ -649,7 +676,6 @@
 
             const roomSignalRef = ref(db, 'signals/' + currentActiveRoom);
             
-            // إنشاء Offer لو أنت أول شخص، أو انتظار وإنشاء Answer
             setTimeout(async () => {
                 const snap = await get(roomSignalRef);
                 let isOfferer = false;
@@ -663,7 +689,6 @@
                     await set(ref(db, 'signals/' + currentActiveRoom + '/' + myKey + '/offer'), { type: offer.type, sdp: offer.sdp });
                 }
 
-                // الاستماع للإشارات الواردة من الطرف الآخر
                 signalsListenerRef = onValue(roomSignalRef, async (snapshot) => {
                     if (!snapshot.exists()) return;
                     snapshot.forEach(async (childSnap) => {
@@ -683,7 +708,7 @@
                         }
 
                         if (data.candidates) {
-                            Object.values(data.candidates).forEach(async (cand) => {
+                            Object.values(data.candidates).values && Object.values(data.candidates).forEach(async (cand) => {
                                 try {
                                     await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
                                 } catch(e){}
